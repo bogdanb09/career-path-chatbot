@@ -28,16 +28,16 @@ CAREERS = {
     "C": ("Accountant", "Manages financial records, ensures accuracy, and prepares reports.")
 }
 
-HTML = """
+HTML = f"""
 <!DOCTYPE html>
 <html>
 <head>
 <title>Career Pathfinder</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { font-family: Arial; max-width:700px; margin:auto; padding:20px; }
-button { padding:10px 20px; margin:5px; }
-#chart-container { margin-top:30px; width:100%; }
+body {{ font-family: Arial; max-width:700px; margin:auto; padding:20px; }}
+button {{ padding:10px 20px; margin:5px; }}
+#chart-container {{ margin-top:30px; width:100%; }}
 </style>
 </head>
 <body>
@@ -48,54 +48,54 @@ button { padding:10px 20px; margin:5px; }
 </div>
 
 <script>
-// Parse questions from a JSON string safely
-const questions = JSON.parse('{{ questions | tojson | safe }}');
+// Questions as JSON string directly
+const questions = {json.dumps(QUESTIONS)};
 let state = 0;
-let scores = {R:0,I:0,A:0,S:0,E:0,C:0};
+let scores = {{R:0,I:0,A:0,S:0,E:0,C:0}};
 
-function ask(i){
+function ask(i){{
     let q = questions[i];
-    let html = `<p><b>Q${i+1}:</b> ${q.text}</p>`;
+    let html = `<p><b>Q${{i+1}}:</b> ${{q.text}}</p>`;
     q.options.forEach(opt=>{
-        html += `<button onclick="answer('${opt.trait}')">${opt.text}</button><br>`;
+        html += `<button onclick="answer('${{opt.trait}}')">${{opt.text}}</button><br>`;
     });
     document.getElementById('chat').innerHTML = html;
-}
+}}
 
-async function answer(trait){
+async function answer(trait){{
     scores[trait] += 1;
-    let resp = await fetch('/answer',{
+    let resp = await fetch('/answer', {{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({trait: trait, state: state})
-    });
+        headers:{{'Content-Type':'application/json'}},
+        body:JSON.stringify({{trait: trait, state: state}})
+    }});
     let data = await resp.json();
-    if(data.done){
+    if(data.done){{
         document.getElementById('chat').innerHTML = `<h3>Your Profession:</h3>
-        <b>${data.profession}</b>: ${data.fact}`;
+        <b>${{data.profession}}</b>: ${{data.fact}}`;
         drawChart(data.chart_data, data.top_trait);
-    }else{
+    }}else{{
         state++;
         ask(state);
-    }
-}
+    }}
+}}
 
-function drawChart(chartData, topTrait){
+function drawChart(chartData, topTrait){{
     const colors = chartData.labels.map(code => code===topTrait ? '#FF9800':'#2196F3');
     const ctx = document.getElementById('riaChart').getContext('2d');
-    new Chart(ctx, {
+    new Chart(ctx, {{
         type:'bar',
-        data:{
+        data:{{
             labels: chartData.labels,
-            datasets:[{
+            datasets:[{{
                 label:'RIASEC Scores',
                 data: chartData.scores,
                 backgroundColor: colors
-            }]
-        },
-        options:{responsive:true, scales:{y:{beginAtZero:true, precision:0}}}
-    });
-}
+            }}]
+        }},
+        options:{{responsive:true, scales:{{y:{{beginAtZero:true, precision:0}}}}}}
+    }});
+}}
 
 ask(0);
 </script>
@@ -105,6 +105,23 @@ ask(0);
 
 @app.route('/')
 def index():
+    return render_template_string(HTML)
+
+@app.route('/answer', methods=['POST'])
+def answer():
+    data = request.json
+    trait = data['trait']
+    state = data['state']
+    RIASEC[trait] += 1
+    if state + 1 >= len(QUESTIONS):
+        top_trait = max(RIASEC.items(), key=lambda x:x[1])[0]
+        profession, fact = CAREERS[top_trait]
+        chart_data = {"labels": list(RIASEC.keys()), "scores": list(RIASEC.values())}
+        return jsonify({"done": True, "profession": profession, "fact": fact, "chart_data": chart_data, "top_trait": top_trait})
+    return jsonify({"done": False})
+
+if __name__=="__main__":
+    app.run(debug=True)def index():
     return render_template_string(HTML, questions=QUESTIONS)
 
 @app.route('/answer', methods=['POST'])
