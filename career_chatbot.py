@@ -58,68 +58,70 @@ questions = [
 
 holland_types = {
     'R': [
-        ("Engineer", "Designs and builds systems and structures. Engineers apply math and science to solve practical problems and improve technologies."),
-        ("Mechanic", "Repairs and maintains machines and vehicles using tools and diagnostic equipment."),
-        ("Electrician", "Installs and maintains electrical wiring and equipment safely and efficiently."),
-        ("Carpenter", "Constructs and repairs building frameworks and structures from wood and other materials."),
-        ("Pilot", "Operates aircraft to transport passengers or goods safely and on schedule.")
+        ("Engineer", "Designs and builds systems and structures. They apply scientific principles to create innovative solutions that improve efficiency and safety in everyday life."),
+        ("Mechanic", "Repairs and maintains machinery and vehicles. They diagnose problems and use tools to keep equipment running smoothly and safely."),
+        ("Electrician", "Installs and maintains electrical systems. They ensure buildings and devices have safe and functional wiring and power sources."),
+        ("Carpenter", "Builds and repairs wooden structures. They use tools to cut, shape, and install materials with precision and care."),
+        ("Pilot", "Flies aircraft safely between destinations. They must understand navigation, weather patterns, and aviation systems.")
     ],
     'I': [
-        ("Scientist", "Conducts experiments and research to increase scientific knowledge in various fields."),
-        ("Doctor", "Diagnoses and treats illnesses while promoting overall health and wellness."),
-        ("Data Analyst", "Uses statistical tools to interpret and visualize data, helping businesses make decisions."),
-        ("Pharmacist", "Prepares and dispenses medications, advising patients on proper usage and effects."),
-        ("Lab Technician", "Performs technical laboratory tests to assist in the diagnosis and treatment of diseases.")
+        ("Scientist", "Conducts experiments to discover how things work. They solve complex problems and contribute new knowledge to their field."),
+        ("Doctor", "Diagnoses and treats illnesses. They work to improve and maintain people’s physical health through medicine and compassion."),
+        ("Data Analyst", "Interprets data to find trends and insights. They help companies make better decisions through evidence and logic."),
+        ("Pharmacist", "Dispenses medications and advises on proper use. They ensure patients get the correct prescriptions and understand their treatments."),
+        ("Lab Technician", "Performs tests and collects data in scientific labs. They assist researchers and doctors in understanding results.")
     ],
     'A': [
-        ("Graphic Designer", "Designs visual content for websites, ads, and branding using digital tools."),
-        ("Writer", "Creates written content for books, websites, media, or scripts."),
-        ("Musician", "Performs, composes, or records music for various audiences."),
-        ("Actor", "Portrays characters in theater, film, or television productions."),
-        ("Animator", "Creates animations and special effects for films, video games, or commercials.")
+        ("Graphic Designer", "Creates visual content to communicate ideas. They use design software to produce graphics for websites, ads, and more."),
+        ("Writer", "Writes content for different formats like books, articles, and websites. They communicate ideas creatively and clearly."),
+        ("Musician", "Plays or composes music for audiences. They may perform live, record albums, or score music for media."),
+        ("Actor", "Performs roles in movies, TV, or theater. They bring characters to life and entertain through storytelling."),
+        ("Animator", "Creates motion graphics and visual effects. They work in film, gaming, and digital content creation.")
     ],
     'S': [
-        ("Teacher", "Educates and mentors students in academic or practical subjects."),
-        ("Counselor", "Provides advice and guidance to help people deal with personal or academic challenges."),
-        ("Nurse", "Cares for patients by administering treatments and monitoring health."),
-        ("Social Worker", "Supports individuals and families by connecting them to needed services and support."),
-        ("Therapist", "Helps people manage emotional or psychological challenges through counseling.")
+        ("Teacher", "Educates students in academic or life skills. They help learners grow and reach their potential."),
+        ("Counselor", "Guides people through personal or emotional difficulties. They offer advice, support, and strategies for well-being."),
+        ("Nurse", "Cares for the sick or injured. They administer treatment, comfort patients, and coordinate with doctors."),
+        ("Social Worker", "Supports vulnerable individuals and families. They help people find resources and cope with challenges."),
+        ("Therapist", "Provides mental health support. They work with clients to improve emotional and psychological wellness.")
     ],
     'E': [
-        ("Entrepreneur", "Builds and runs businesses, taking on financial and strategic risks."),
-        ("Manager", "Supervises teams, resources, and operations in organizations or projects."),
-        ("Lawyer", "Provides legal advice and represents clients in courts and negotiations."),
-        ("Salesperson", "Sells products or services and builds client relationships."),
-        ("Marketing Specialist", "Creates and implements strategies to promote and sell products or brands.")
+        ("Entrepreneur", "Starts and runs businesses. They take risks and innovate to bring products or services to life."),
+        ("Manager", "Leads teams to reach goals. They coordinate projects, oversee staff, and solve workplace challenges."),
+        ("Lawyer", "Advises and represents clients in legal matters. They argue cases in court and interpret laws."),
+        ("Salesperson", "Sells products or services and builds customer relationships. They understand client needs and offer suitable solutions."),
+        ("Marketing Specialist", "Promotes brands through campaigns. They use creativity and data to connect with customers.")
     ],
     'C': [
-        ("Accountant", "Manages financial records, budgets, and tax documents accurately."),
-        ("Administrator", "Oversees day-to-day administrative operations in an office or department."),
-        ("Data Entry Clerk", "Inputs data into computer systems efficiently and accurately."),
-        ("Bank Clerk", "Handles customer transactions and maintains financial records in banks."),
-        ("Auditor", "Examines financial statements to ensure accuracy and compliance with laws.")
+        ("Accountant", "Tracks finances and prepares reports. They ensure accuracy in budgets, taxes, and financial decisions."),
+        ("Administrator", "Manages daily operations of offices or institutions. They keep things organized and running smoothly."),
+        ("Data Entry Clerk", "Inputs and maintains accurate data in systems. They ensure records are clean and up to date."),
+        ("Bank Clerk", "Handles customer transactions at banks. They assist with deposits, withdrawals, and inquiries."),
+        ("Auditor", "Checks financial records for errors or fraud. They help businesses stay compliant and transparent.")
     ]
 }
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    selected_questions = random.sample(questions, 50)
+    shuffled_questions = random.sample(questions, 50)
     if request.method == 'POST':
         scores = {'R': 0, 'I': 0, 'A': 0, 'S': 0, 'E': 0, 'C': 0}
         for i in range(50):
             answer = request.form.get(f'q{i}')
             if answer and answer.isdigit():
-                _, category = selected_questions[i]
+                question, category = shuffled_questions[i]
                 scores[category] += int(answer)
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        ranked_careers = []
+        top_careers = []
         for code, _ in sorted_scores:
-            ranked_careers.extend(holland_types[code])
+            top_careers.extend(holland_types[code])
+            if len(top_careers) >= 5:
+                break
 
-        return render_template_string(RESULT_TEMPLATE, results=ranked_careers[:15])
+        return render_template_string(RESULT_TEMPLATE, careers=top_careers[:5])
 
-    return render_template_string(QUESTION_TEMPLATE, questions=selected_questions)
+    return render_template_string(QUESTION_TEMPLATE, questions=shuffled_questions)
 
 QUESTION_TEMPLATE = """
 <!doctype html>
@@ -136,7 +138,7 @@ QUESTION_TEMPLATE = """
 <body>
   <form method="post">
     <h1>Career Guidance Chatbot</h1>
-    <p>Rate how much you agree with each of the following statements (1 = Strongly Disagree, 5 = Strongly Agree):</p>
+    <p>Rate each statement from 1 (Strongly Disagree) to 5 (Strongly Agree):</p>
     {% for i in range(questions|length) %}
       <p><strong>Q{{ i+1 }}:</strong> {{ questions[i][0] }}<br>
       <input type="number" name="q{{ i }}" min="1" max="5" required></p>
@@ -156,18 +158,18 @@ RESULT_TEMPLATE = """
     body { font-family: Arial, sans-serif; background: #eef2f7; padding: 20px; }
     .result-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h2 { color: #333; }
-    ul { margin-left: 20px; }
-    li { margin-bottom: 10px; }
+    ol { margin-left: 20px; }
+    li { margin-bottom: 15px; }
   </style>
 </head>
 <body>
   <h1>Your Most Likely Career Matches</h1>
   <div class="result-box">
-    <ul>
-      {% for career, desc in results %}
+    <ol>
+      {% for career, desc in careers %}
         <li><strong>{{ career }}</strong>: {{ desc }}</li>
       {% endfor %}
-    </ul>
+    </ol>
   </div>
   <a href="/">Take the test again</a>
 </body>
