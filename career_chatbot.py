@@ -6,15 +6,19 @@ app.secret_key = "change-this-secret"
 
 RIASEC = {k: 0 for k in "RIASCE"}
 
-QUESTIONS = [
-    {"id": f"q{i+1}", "text": f"Question {i+1}: Choose the activity that appeals most to you:",
-     "options": [
-         {"text": "Hands-on or practical work", "trait": "R"},
-         {"text": "Analyzing or researching information", "trait": "I"},
-         {"text": "Creative or artistic expression", "trait": "A"},
-         {"text": "Helping or teaching others", "trait": "S"}
-     ]} for i in range(50)
-]
+# Generate 50 questions with static options
+QUESTIONS = []
+for i in range(50):
+    QUESTIONS.append({
+        "id": f"q{i+1}",
+        "text": f"Question {i+1}: Choose the activity that appeals most to you:",
+        "options": [
+            {"text": "Hands-on or practical work", "trait": "R"},
+            {"text": "Analyzing or researching information", "trait": "I"},
+            {"text": "Creative or artistic expression", "trait": "A"},
+            {"text": "Helping or teaching others", "trait": "S"}
+        ]
+    })
 
 CAREERS = {
     "R": ("Engineer", "Designs and builds machines, structures, or systems using science and math. Alternative careers: Mechanic, Carpenter, Electrician."),
@@ -102,6 +106,24 @@ ask(0);
 @app.route('/')
 def index():
     for k in RIASEC: RIASEC[k]=0
+    session['q_index']=0
+    return render_template_string(HTML, questions=json.dumps(QUESTIONS))
+
+@app.route('/answer', methods=['POST'])
+def answer():
+    data = request.json
+    trait = data['trait']
+    RIASEC[trait] += 1
+    session['q_index'] += 1
+    if session['q_index'] >= len(QUESTIONS):
+        top_trait = max(RIASEC.items(), key=lambda x:x[1])[0]
+        profession, fact = CAREERS[top_trait]
+        chart_data = {"labels": list(RIASEC.keys()), "scores": list(RIASEC.values())}
+        return jsonify({"done": True, "profession": profession, "fact": fact, "chart_data": chart_data, "top_trait": top_trait})
+    return jsonify({"done": False})
+
+if __name__=="__main__":
+    app.run(debug=True)    for k in RIASEC: RIASEC[k]=0
     session['q_index']=0
     js_questions = QUESTIONS
     return render_template_string(HTML, questions=json.dumps(js_questions))
