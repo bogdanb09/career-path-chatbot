@@ -1,12 +1,11 @@
-from flask import Flask, request, jsonify, render_template_string, session
+from flask import Flask, request, jsonify, render_template_string
 import json
 
 app = Flask(__name__)
-app.secret_key = "change-this-secret"
 
 RIASEC = {k: 0 for k in "RIASCE"}
 
-# Generate 50 questions with static options
+# 50 questions with static options
 QUESTIONS = []
 for i in range(50):
     QUESTIONS.append({
@@ -21,12 +20,12 @@ for i in range(50):
     })
 
 CAREERS = {
-    "R": ("Engineer", "Designs and builds machines, structures, or systems using science and math. Alternative careers: Mechanic, Carpenter, Electrician."),
-    "I": ("Data Scientist", "Analyzes complex data to help companies make decisions. Alternative careers: Researcher, Analyst, Software Developer."),
-    "A": ("Graphic Designer", "Creates visual content for print, digital media, and branding. Alternative careers: Illustrator, Animator, Photographer."),
-    "S": ("Teacher", "Educates students, guiding their learning and personal growth. Alternative careers: Counselor, Nurse, Social Worker."),
-    "E": ("Entrepreneur", "Starts and manages businesses, taking financial risks for profit. Alternative careers: Sales Manager, Project Leader, Marketing Strategist."),
-    "C": ("Accountant", "Manages financial records, ensures accuracy, and prepares reports. Alternative careers: Administrator, Auditor, Operations Coordinator.")
+    "R": ("Engineer", "Designs and builds machines, structures, or systems using science and math."),
+    "I": ("Data Scientist", "Analyzes complex data to help companies make decisions."),
+    "A": ("Graphic Designer", "Creates visual content for print, digital media, and branding."),
+    "S": ("Teacher", "Educates students, guiding their learning and personal growth."),
+    "E": ("Entrepreneur", "Starts and manages businesses, taking financial risks for profit."),
+    "C": ("Accountant", "Manages financial records, ensures accuracy, and prepares reports.")
 }
 
 HTML = """
@@ -67,7 +66,7 @@ async function answer(trait){
     let resp = await fetch('/answer',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({trait: trait})
+        body:JSON.stringify({trait: trait, state: state})
     });
     let data = await resp.json();
     if(data.done){
@@ -105,6 +104,23 @@ ask(0);
 
 @app.route('/')
 def index():
+    return render_template_string(HTML, questions=json.dumps(QUESTIONS))
+
+@app.route('/answer', methods=['POST'])
+def answer():
+    data = request.json
+    trait = data['trait']
+    state = data['state']
+    RIASEC[trait] += 1
+    if state + 1 >= len(QUESTIONS):
+        top_trait = max(RIASEC.items(), key=lambda x:x[1])[0]
+        profession, fact = CAREERS[top_trait]
+        chart_data = {"labels": list(RIASEC.keys()), "scores": list(RIASEC.values())}
+        return jsonify({"done": True, "profession": profession, "fact": fact, "chart_data": chart_data, "top_trait": top_trait})
+    return jsonify({"done": False})
+
+if __name__=="__main__":
+    app.run(debug=True)def index():
     for k in RIASEC: RIASEC[k]=0
     session['q_index']=0
     return render_template_string(HTML, questions=json.dumps(QUESTIONS))
