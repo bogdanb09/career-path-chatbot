@@ -1,23 +1,11 @@
 """
 Career-Path Chatbot (Holland-style, original 50-question version)
 -----------------------------------------------------------------
-This chatbot asks 50 original questions inspired by RIASEC traits.
-Each question contributes to one or more RIASEC traits.
-
-RIASEC dimensions:
-R — Realistic (hands‑on, tools, building)
-I — Investigative (analysis, problem solving, ideas)
-A — Artistic (creativity, design, self-expression)
-S — Social (helping, guiding, teaching)
-E — Enterprising (leading, persuading, initiating projects)
-C — Conventional (organization, structure, planning)
-
-Run:
-    python career_chatbot.py
-Then open http://127.0.0.1:5000
+50 original questions inspired by RIASEC traits.
 """
 
 from flask import Flask, request, jsonify, render_template_string, session
+import json
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret"
@@ -29,7 +17,6 @@ RIASEC = {k: 0 for k in "RIASCE"}
 
 # ----------------------------------------------------
 # 2. 50 original questions
-# Each tuple: (question_id, question_text, RIASEC traits influenced)
 # ----------------------------------------------------
 QUESTIONS = [
     ("q1", "Do you enjoy fixing or building things with your hands?", ["R"]),
@@ -54,7 +41,7 @@ QUESTIONS = [
     ("q20", "Do you like asking questions to understand how things work?", ["I"]),
     ("q21", "Do you enjoy storytelling or performing arts?", ["A"]),
     ("q22", "Do you enjoy mentoring or coaching others?", ["S"]),
-    ("q23", "Do you like motivating others to reach goals?", ["E"]),
+    ("q23", "Do you like organizing events or motivating people?", ["E"]),
     ("q24", "Do you enjoy following rules and organizing tasks?", ["C"]),
     ("q25", "Do you prefer building or repairing objects over thinking abstractly?", ["R"]),
     ("q26", "Do you enjoy reading, researching, or solving logical problems?", ["I"]),
@@ -66,7 +53,7 @@ QUESTIONS = [
     ("q32", "Do you like studying patterns or trends?", ["I"]),
     ("q33", "Do you enjoy creative writing or designing visual art?", ["A"]),
     ("q34", "Do you enjoy helping friends solve personal problems?", ["S"]),
-    ("q35", "Do you like organizing events or motivating people?", ["E"]),
+    ("q35", "Do you like inspiring others or leading a team?", ["E"]),
     ("q36", "Do you enjoy maintaining order or following rules?", ["C"]),
     ("q37", "Do you enjoy assembling or constructing things?", ["R"]),
     ("q38", "Do you enjoy analyzing statistics or scientific data?", ["I"]),
@@ -84,7 +71,9 @@ QUESTIONS = [
     ("q50", "Do you enjoy combining creativity with helping others?", ["A","S"])
 ]
 
-# Keywords mapping to RIASEC traits for scoring
+# ----------------------------------------------------
+# Keywords mapping to RIASEC traits
+# ----------------------------------------------------
 KEYWORDS = {
     "R": ["hands-on", "build", "repair", "tools", "physical", "practical", "outdoors"],
     "I": ["analyze", "research", "logic", "math", "experiment", "think", "study", "question"],
@@ -105,6 +94,104 @@ CAREERS = {
 }
 
 # ----------------------------------------------------
+# Helper: score free text answer
+# ----------------------------------------------------
+def score_answer(text, traits):
+    text = text.lower()
+    for t in traits:
+        for kw in KEYWORDS.get(t, []):
+            if kw in text:
+                RIASEC[t] += 1
+
+# ----------------------------------------------------
+# Web UI
+# ----------------------------------------------------
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+<title>Career Pathfinder</title>
+<style>
+body { font-family: Arial; max-width: 600px; margin: auto; padding: 20px; }
+.question { font-size: 1.2em; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<h2>Career Pathfinder (RIASEC-inspired)</h2>
+<div id="chat"></div>
+<script>
+let state = 0;
+const questions = {{ questions|safe }};
+
+function ask(i) {
+    document.getElementById('chat').innerHTML += `<p><b>Q${i+1}:</b> ${questions[i].text}</p>`;
+}
+
+async function sendAnswer(a) {
+    const q = questions[state].id;
+    let r = await fetch('/answer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: q, answer: a})
+    });
+    let data = await r.json();
+    if (data.done) {
+        document.getElementById('chat').innerHTML += `<h3>Your Results:</h3><pre>${data.results}</pre>`;
+    } else {
+        state++;
+        ask(state);
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        let input = document.getElementById('input').value;
+        if (!input) return;
+        document.getElementById('chat').innerHTML += `<p><i>You:</i> ${input}</p>`;
+        sendAnswer(input);
+        document.getElementById('input').value = '';
+    }
+});
+</script>
+<input id="input" placeholder="Type your answer and hit Enter..." style="width:100%; padding:10px; margin-top:20px;">
+<script>ask(0);</script>
+</body>
+</html>
+"""
+
+# ----------------------------------------------------
+# Routes
+# ----------------------------------------------------
+@app.route('/')
+def index():
+    for k in RIASEC: RIASEC[k] = 0
+    session['q_index'] = 0
+    js_questions = [{"id": q[0], "text": q[1]} for q in QUESTIONS]
+    return render_template_string(HTML, questions=json.dumps(js_questions))
+
+@app.route('/answer', methods=['POST'])
+def answer():
+    data = request.json
+    q_id = data['question']
+    ans = data['answer']
+
+    for q_key, _, traits in QUESTIONS:
+        if q_key == q_id:
+            score_answer(ans, traits)
+            break
+
+    session['q_index'] += 1
+    if session['q_index'] >= len(QUESTIONS):
+        sorted_codes = sorted(RIASEC.items(), key=lambda x: x[1], reverse=True)
+        top = sorted_codes[0][0]
+        recommended = CAREERS[top]
+        result_text = f"Your dominant trait is: {top}\nRecommended careers: " + ", ".join(recommended)
+        return jsonify({"done": True, "results": result_text})
+
+    return jsonify({"done": False, "next": session['q_index']})
+
+if __name__ == '__main__':
+    app.run(debug=True)# ----------------------------------------------------
 # Helper: score free text answer
 # ----------------------------------------------------
 def score_answer(text, traits):
