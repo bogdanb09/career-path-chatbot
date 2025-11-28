@@ -58,46 +58,46 @@ questions = [
 
 holland_types = {
     'R': ("Realistic (Doers)", [
-        ("Engineer", "Designs and builds systems, solving real-world problems using math and science."),
-        ("Mechanic", "Maintains and repairs vehicles or machinery with technical precision."),
-        ("Electrician", "Installs and maintains electrical systems safely and efficiently."),
-        ("Carpenter", "Builds and repairs wooden structures for homes and businesses."),
-        ("Pilot", "Flies aircraft to transport passengers or cargo across distances.")
+        ("Engineer", "Designs and builds systems and structures. Engineers apply math and science to solve practical problems and improve technologies."),
+        ("Mechanic", "Repairs and maintains machines and vehicles using tools and diagnostic equipment."),
+        ("Electrician", "Installs and maintains electrical wiring and equipment safely and efficiently."),
+        ("Carpenter", "Constructs and repairs building frameworks and structures from wood and other materials."),
+        ("Pilot", "Operates aircraft to transport passengers or goods safely and on schedule.")
     ]),
     'I': ("Investigative (Thinkers)", [
-        ("Scientist", "Conducts experiments to understand natural phenomena and solve problems."),
-        ("Doctor", "Diagnoses illnesses and provides treatment to improve health."),
-        ("Data Analyst", "Interprets data to guide decision-making in various industries."),
-        ("Pharmacist", "Prepares and dispenses medication with guidance for safe use."),
-        ("Lab Technician", "Assists in scientific research and medical testing.")
+        ("Scientist", "Conducts experiments and research to increase scientific knowledge in various fields."),
+        ("Doctor", "Diagnoses and treats illnesses while promoting overall health and wellness."),
+        ("Data Analyst", "Uses statistical tools to interpret and visualize data, helping businesses make decisions."),
+        ("Pharmacist", "Prepares and dispenses medications, advising patients on proper usage and effects."),
+        ("Lab Technician", "Performs technical laboratory tests to assist in the diagnosis and treatment of diseases.")
     ]),
     'A': ("Artistic (Creators)", [
-        ("Graphic Designer", "Creates visuals for marketing, branding, and communication."),
-        ("Writer", "Produces content ranging from novels to technical manuals."),
-        ("Musician", "Composes, performs, or records musical works."),
-        ("Actor", "Performs roles in theater, TV, or film productions."),
-        ("Animator", "Creates animations for movies, games, and digital content.")
+        ("Graphic Designer", "Designs visual content for websites, ads, and branding using digital tools."),
+        ("Writer", "Creates written content for books, websites, media, or scripts."),
+        ("Musician", "Performs, composes, or records music for various audiences."),
+        ("Actor", "Portrays characters in theater, film, or television productions."),
+        ("Animator", "Creates animations and special effects for films, video games, or commercials.")
     ]),
     'S': ("Social (Helpers)", [
-        ("Teacher", "Educates and mentors students in schools or training programs."),
-        ("Counselor", "Helps individuals navigate personal and emotional challenges."),
-        ("Nurse", "Provides patient care and assists with medical procedures."),
-        ("Social Worker", "Supports families and communities with essential services."),
-        ("Therapist", "Offers mental health support and coping strategies.")
+        ("Teacher", "Educates and mentors students in academic or practical subjects."),
+        ("Counselor", "Provides advice and guidance to help people deal with personal or academic challenges."),
+        ("Nurse", "Cares for patients by administering treatments and monitoring health."),
+        ("Social Worker", "Supports individuals and families by connecting them to needed services and support."),
+        ("Therapist", "Helps people manage emotional or psychological challenges through counseling.")
     ]),
     'E': ("Enterprising (Persuaders)", [
-        ("Entrepreneur", "Starts and runs businesses by taking strategic risks."),
-        ("Manager", "Leads teams and manages business operations."),
-        ("Lawyer", "Advises clients and represents them in legal matters."),
-        ("Salesperson", "Promotes and sells products or services."),
-        ("Marketing Specialist", "Creates campaigns to attract and retain customers.")
+        ("Entrepreneur", "Builds and runs businesses, taking on financial and strategic risks."),
+        ("Manager", "Supervises teams, resources, and operations in organizations or projects."),
+        ("Lawyer", "Provides legal advice and represents clients in courts and negotiations."),
+        ("Salesperson", "Sells products or services and builds client relationships."),
+        ("Marketing Specialist", "Creates and implements strategies to promote and sell products or brands.")
     ]),
     'C': ("Conventional (Organizers)", [
-        ("Accountant", "Manages financial records and ensures compliance."),
-        ("Administrator", "Oversees administrative operations in offices or institutions."),
-        ("Data Entry Clerk", "Inputs and organizes data with precision."),
-        ("Bank Clerk", "Handles transactions and customer service in banks."),
-        ("Auditor", "Examines records for accuracy and legal compliance.")
+        ("Accountant", "Manages financial records, budgets, and tax documents accurately."),
+        ("Administrator", "Oversees day-to-day administrative operations in an office or department."),
+        ("Data Entry Clerk", "Inputs data into computer systems efficiently and accurately."),
+        ("Bank Clerk", "Handles customer transactions and maintains financial records in banks."),
+        ("Auditor", "Examines financial statements to ensure accuracy and compliance with laws.")
     ])
 }
 
@@ -106,14 +106,16 @@ def index():
     selected_questions = random.sample(questions, 50)
     if request.method == 'POST':
         scores = {'R': 0, 'I': 0, 'A': 0, 'S': 0, 'E': 0, 'C': 0}
-        for i in range(len(selected_questions)):
-            score = request.form.get(f'q{i}')
-            if score and score.isdigit():
-                _, category = selected_questions[i]
-                scores[category] += int(score)
+        for i in range(50):
+            answer = request.form.get(f'q{i}')
+            if answer and answer.isdigit():
+                question, category = selected_questions[i]
+                scores[category] += int(answer)
 
-        top = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
-        results = [(holland_types[k][0], holland_types[k][1]) for k, _ in top]
+        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        top_3 = [code for code, score in sorted_scores[:3]]
+        results = [(holland_types[code][0], holland_types[code][1]) for code in top_3]
+
         return render_template_string(RESULT_TEMPLATE, results=results)
 
     return render_template_string(QUESTION_TEMPLATE, questions=selected_questions)
@@ -122,25 +124,23 @@ QUESTION_TEMPLATE = """
 <!doctype html>
 <html>
 <head>
-  <title>Career Guidance</title>
+  <title>Career Guidance Chatbot</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
-    form { background: white; padding: 2em; border-radius: 10px; max-width: 800px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
+    form { background: white; padding: 20px; border-radius: 10px; max-width: 700px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h1 { text-align: center; }
-    .question { margin-bottom: 1em; }
-    input[type='submit'] { padding: 0.7em 2em; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    input[type='submit'] { margin-top: 20px; background: #007BFF; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
   </style>
 </head>
 <body>
   <form method="post">
     <h1>Career Guidance Chatbot</h1>
-    {% for i, (question, _) in enumerate(questions) %}
-      <div class="question">
-        <label><strong>Q{{ i+1 }}:</strong> {{ question }}</label><br>
-        <input type="number" name="q{{ i }}" min="1" max="5" required>
-      </div>
+    <p>Rate how much you agree with each of the following statements:</p>
+    {% for i in range(questions|length) %}
+      <p><strong>Q{{ i+1 }}:</strong> {{ questions[i][0] }}<br>
+      <input type="number" name="q{{ i }}" min="1" max="5" required></p>
     {% endfor %}
-    <input type="submit" value="Get My Career Path">
+    <input type="submit" value="Get Career Suggestions">
   </form>
 </body>
 </html>
@@ -150,18 +150,17 @@ RESULT_TEMPLATE = """
 <!doctype html>
 <html>
 <head>
-  <title>Your Career Path</title>
+  <title>Career Results</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; background: #eef2f7; }
-    .result-box { background: white; padding: 2em; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    body { font-family: Arial, sans-serif; background: #eef2f7; padding: 20px; }
+    .result-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     h2 { color: #333; }
-    ul { margin-top: 10px; }
+    ul { margin-left: 20px; }
     li { margin-bottom: 10px; }
-    a { display: block; margin-top: 30px; text-align: center; color: #007bff; text-decoration: none; }
   </style>
 </head>
 <body>
-  <h1>Your Career Path Results</h1>
+  <h1>Your Career Path Suggestions</h1>
   {% for title, careers in results %}
     <div class="result-box">
       <h2>{{ title }}</h2>
@@ -177,6 +176,5 @@ RESULT_TEMPLATE = """
 </html>
 """
 
-# Do not include app.run() when deploying to Render
-# if __name__ == '__main__':
-#     app.run(debug=False)
+if __name__ == '__main__':
+    app.run(debug=False)
