@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: career-chatbot
+    env: python
+    buildCommand: ""
+    startCommand: gunicorn career_chatbot:app
