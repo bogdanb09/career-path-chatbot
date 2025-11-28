@@ -58,8 +58,38 @@ questions = [
     ("I enjoy forming hypotheses and testing them.", 'I')
 ]
 
-# Import and define holland_types like before (truncated here for brevity)
-from career_data import holland_types
+holland_types = {
+    'R': ("Realistic (Doers)", [("Engineer", "Designs and builds systems and structures. Engineers apply math and science to solve practical problems and improve technologies. They often work in fields such as mechanical, civil, electrical, and software engineering."),
+        ("Mechanic", "Repairs and maintains machines and vehicles. Mechanics use tools and technical knowledge to diagnose problems and ensure machines run smoothly and safely."),
+        ("Electrician", "Installs and maintains electrical systems. Electricians read blueprints, follow regulations, and ensure power systems operate effectively."),
+        ("Carpenter", "Builds and repairs structures made of wood. Carpenters work on construction sites creating frameworks, furniture, and finishing touches for homes and buildings."),
+        ("Pilot", "Operates aircraft to transport passengers or goods. Pilots must be trained and licensed to navigate and control aircraft safely.")]),
+    'I': ("Investigative (Thinkers)", [("Scientist", "Conducts research to discover new knowledge. Scientists often work in labs or the field, applying the scientific method to investigate questions."),
+        ("Doctor", "Diagnoses and treats illnesses and injuries. Doctors work closely with patients, prescribe medications, and may perform surgeries."),
+        ("Data Analyst", "Interprets data to support decision-making. They find patterns in data using statistics and software, helping businesses make evidence-based choices."),
+        ("Pharmacist", "Dispenses medications and advises on their use. Pharmacists also educate patients on drug interactions and health maintenance."),
+        ("Lab Technician", "Performs technical laboratory tests and procedures. They collect samples, run tests, and ensure accurate results for diagnosis or research.")]),
+    'A': ("Artistic (Creators)", [("Graphic Designer", "Creates visual content to communicate messages. They design logos, advertisements, and websites using tools like Adobe Photoshop."),
+        ("Writer", "Produces written content for various media. Writers may work in journalism, fiction, blogging, or technical writing."),
+        ("Musician", "Composes or performs music. Musicians express ideas and emotions through sound, performing live or recording in studios."),
+        ("Actor", "Portrays characters in performances. Actors interpret scripts and perform on stage, in films, or on television."),
+        ("Animator", "Creates animations and visual effects. They work in film, TV, video games, and digital media using computer graphics.")]),
+    'S': ("Social (Helpers)", [("Teacher", "Educates students in a variety of subjects. Teachers prepare lessons, grade assignments, and inspire learning and growth."),
+        ("Counselor", "Provides guidance and support to individuals. Counselors help people navigate personal, academic, or career challenges."),
+        ("Nurse", "Cares for patients and assists in treatment. Nurses monitor health, administer medication, and support recovery."),
+        ("Social Worker", "Supports individuals and families in need. They advocate for clients, connect them with services, and assist in crisis situations."),
+        ("Therapist", "Helps people cope with emotional challenges. Therapists provide mental health care through talk therapy and coping strategies.")]),
+    'E': ("Enterprising (Persuaders)", [("Entrepreneur", "Starts and manages new business ventures. Entrepreneurs take risks to develop products or services and grow a company."),
+        ("Manager", "Oversees teams and operations. Managers plan, organize, and supervise people and processes to achieve goals."),
+        ("Lawyer", "Advises and represents clients in legal matters. Lawyers prepare cases, represent clients in court, and interpret laws."),
+        ("Salesperson", "Sells products or services to customers. They build client relationships and persuade customers to make purchases."),
+        ("Marketing Specialist", "Promotes products to target audiences. Marketers analyze markets, plan campaigns, and create branding strategies.")]),
+    'C': ("Conventional (Organizers)", [("Accountant", "Manages financial records and reports. Accountants prepare budgets, file taxes, and ensure financial accuracy."),
+        ("Administrator", "Handles office tasks and procedures. They organize files, manage schedules, and support office operations."),
+        ("Data Entry Clerk", "Inputs and maintains digital records. This job requires accuracy, attention to detail, and basic computer skills."),
+        ("Bank Clerk", "Provides banking services and transactions. They assist customers, process payments, and manage records."),
+        ("Auditor", "Inspects financial records for accuracy. Auditors examine books, ensure compliance, and identify discrepancies.")])
+}
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -75,35 +105,68 @@ def index():
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         top_3 = [code for code, score in sorted_scores[:3]]
         results = [(holland_types[code][0], holland_types[code][1]) for code in top_3]
-
-        html_result = render_template_string(RESULT_TEMPLATE, results=results)
-        return html_result
+        return render_template_string(RESULT_TEMPLATE, results=results)
 
     return render_template_string(QUESTION_TEMPLATE, questions=shuffled_questions)
-
-@app.route('/download', methods=['POST'])
-def download():
-    results_html = request.form.get('results_html')
-    result_io = io.BytesIO()
-    pisa.CreatePDF(results_html, dest=result_io)
-    result_io.seek(0)
-    return send_file(result_io, download_name="career_results.pdf", as_attachment=True)
 
 QUESTION_TEMPLATE = """
 <!doctype html>
 <html>
 <head>
-    <title>Career Guidance Chatbot</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; background: #f0f2f5; }
-        form { background: white; padding: 2em; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input[type=submit] { padding: 10px 20px; margin-top: 1em; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        h1 { color: #333; }
-    </style>
+  <title>Career Guidance Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; background: #f0f2f5; }
+    form { background: white; padding: 2em; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input[type=submit] { padding: 10px 20px; margin-top: 1em; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    h1 { color: #333; }
+  </style>
 </head>
 <body>
 <h1>Career Guidance Chatbot</h1>
 <p>Answer the following 50 questions (1 = Strongly Disagree, 5 = Strongly Agree)</p>
+<form method="post">
+  {% for i, (question, category) in enumerate(questions) %}
+    <p><b>Q{{ i+1 }}:</b> {{ question }}<br>
+    <input type="number" name="q{{ i }}" min="1" max="5" required></p>
+  {% endfor %}
+  <input type="submit" value="Submit">
+</form>
+</body>
+</html>
+"""
+
+RESULT_TEMPLATE = """
+<!doctype html>
+<html>
+<head>
+  <title>Results</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f9fc; padding: 2em; }
+    .card { background: white; border-radius: 10px; padding: 1.5em; margin-bottom: 2em; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h2 { color: #444; }
+    ul { line-height: 1.8; }
+    a.button { display: inline-block; margin-top: 1em; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+<h1>Your Career Path Suggestions</h1>
+{% for title, careers in results %}
+  <div class="card">
+    <h2>{{ title }}</h2>
+    <ul>
+    {% for career, desc in careers %}
+      <li><b>{{ career }}</b>: {{ desc }}</li>
+    {% endfor %}
+    </ul>
+  </div>
+{% endfor %}
+<a href="/">Take the test again</a>
+</body>
+</html>
+"""
+
+if __name__ == '__main__':
+    app.run(debug=True)
 <form method="post">
     {% for i, (question, category) in enumerate(questions) %}
         <p><b>Q{{ i+1 }}:</b> {{ question }}<br>
