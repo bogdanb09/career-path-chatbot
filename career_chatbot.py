@@ -58,89 +58,89 @@ questions = [
 
 holland_types = {
     'R': ("Realistic (Doers)", [
-        ("Engineer", "Designs and builds systems and structures. Engineers apply math and science to solve practical problems and improve technologies."),
-        ("Mechanic", "Repairs and maintains machines and vehicles using tools and diagnostic equipment."),
-        ("Electrician", "Installs and maintains electrical wiring and equipment safely and efficiently."),
-        ("Carpenter", "Constructs and repairs building frameworks and structures from wood and other materials."),
-        ("Pilot", "Operates aircraft to transport passengers or goods safely and on schedule.")
+        ("Engineer", "Designs and builds systems, solving real-world problems using math and science."),
+        ("Mechanic", "Maintains and repairs vehicles or machinery with technical precision."),
+        ("Electrician", "Installs and maintains electrical systems safely and efficiently."),
+        ("Carpenter", "Builds and repairs wooden structures for homes and businesses."),
+        ("Pilot", "Flies aircraft to transport passengers or cargo across distances.")
     ]),
     'I': ("Investigative (Thinkers)", [
-        ("Scientist", "Conducts experiments and research to increase scientific knowledge in various fields."),
-        ("Doctor", "Diagnoses and treats illnesses while promoting overall health and wellness."),
-        ("Data Analyst", "Uses statistical tools to interpret and visualize data, helping businesses make decisions."),
-        ("Pharmacist", "Prepares and dispenses medications, advising patients on proper usage and effects."),
-        ("Lab Technician", "Performs technical laboratory tests to assist in the diagnosis and treatment of diseases.")
+        ("Scientist", "Conducts experiments to understand natural phenomena and solve problems."),
+        ("Doctor", "Diagnoses illnesses and provides treatment to improve health."),
+        ("Data Analyst", "Interprets data to guide decision-making in various industries."),
+        ("Pharmacist", "Prepares and dispenses medication with guidance for safe use."),
+        ("Lab Technician", "Assists in scientific research and medical testing.")
     ]),
     'A': ("Artistic (Creators)", [
-        ("Graphic Designer", "Designs visual content for websites, ads, and branding using digital tools."),
-        ("Writer", "Creates written content for books, websites, media, or scripts."),
-        ("Musician", "Performs, composes, or records music for various audiences."),
-        ("Actor", "Portrays characters in theater, film, or television productions."),
-        ("Animator", "Creates animations and special effects for films, video games, or commercials.")
+        ("Graphic Designer", "Creates visuals for marketing, branding, and communication."),
+        ("Writer", "Produces content ranging from novels to technical manuals."),
+        ("Musician", "Composes, performs, or records musical works."),
+        ("Actor", "Performs roles in theater, TV, or film productions."),
+        ("Animator", "Creates animations for movies, games, and digital content.")
     ]),
     'S': ("Social (Helpers)", [
-        ("Teacher", "Educates and mentors students in academic or practical subjects."),
-        ("Counselor", "Provides advice and guidance to help people deal with personal or academic challenges."),
-        ("Nurse", "Cares for patients by administering treatments and monitoring health."),
-        ("Social Worker", "Supports individuals and families by connecting them to needed services and support."),
-        ("Therapist", "Helps people manage emotional or psychological challenges through counseling.")
+        ("Teacher", "Educates and mentors students in schools or training programs."),
+        ("Counselor", "Helps individuals navigate personal and emotional challenges."),
+        ("Nurse", "Provides patient care and assists with medical procedures."),
+        ("Social Worker", "Supports families and communities with essential services."),
+        ("Therapist", "Offers mental health support and coping strategies.")
     ]),
     'E': ("Enterprising (Persuaders)", [
-        ("Entrepreneur", "Builds and runs businesses, taking on financial and strategic risks."),
-        ("Manager", "Supervises teams, resources, and operations in organizations or projects."),
-        ("Lawyer", "Provides legal advice and represents clients in courts and negotiations."),
-        ("Salesperson", "Sells products or services and builds client relationships."),
-        ("Marketing Specialist", "Creates and implements strategies to promote and sell products or brands.")
+        ("Entrepreneur", "Starts and runs businesses by taking strategic risks."),
+        ("Manager", "Leads teams and manages business operations."),
+        ("Lawyer", "Advises clients and represents them in legal matters."),
+        ("Salesperson", "Promotes and sells products or services."),
+        ("Marketing Specialist", "Creates campaigns to attract and retain customers.")
     ]),
     'C': ("Conventional (Organizers)", [
-        ("Accountant", "Manages financial records, budgets, and tax documents accurately."),
-        ("Administrator", "Oversees day-to-day administrative operations in an office or department."),
-        ("Data Entry Clerk", "Inputs data into computer systems efficiently and accurately."),
-        ("Bank Clerk", "Handles customer transactions and maintains financial records in banks."),
-        ("Auditor", "Examines financial statements to ensure accuracy and compliance with laws.")
+        ("Accountant", "Manages financial records and ensures compliance."),
+        ("Administrator", "Oversees administrative operations in offices or institutions."),
+        ("Data Entry Clerk", "Inputs and organizes data with precision."),
+        ("Bank Clerk", "Handles transactions and customer service in banks."),
+        ("Auditor", "Examines records for accuracy and legal compliance.")
     ])
 }
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    shuffled_questions = random.sample(questions, 50)
+    selected_questions = random.sample(questions, 50)
     if request.method == 'POST':
         scores = {'R': 0, 'I': 0, 'A': 0, 'S': 0, 'E': 0, 'C': 0}
-        for i in range(50):
-            answer = request.form.get(f'q{i}')
-            if answer and answer.isdigit():
-                question, category = shuffled_questions[i]
-                scores[category] += int(answer)
+        for i in range(len(selected_questions)):
+            score = request.form.get(f'q{i}')
+            if score and score.isdigit():
+                _, category = selected_questions[i]
+                scores[category] += int(score)
 
-        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        top_3 = [code for code, score in sorted_scores[:3]]
-        results = [(holland_types[code][0], holland_types[code][1]) for code in top_3]
-
+        top = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
+        results = [(holland_types[k][0], holland_types[k][1]) for k, _ in top]
         return render_template_string(RESULT_TEMPLATE, results=results)
 
-    return render_template_string(QUESTION_TEMPLATE, questions=shuffled_questions)
+    return render_template_string(QUESTION_TEMPLATE, questions=selected_questions)
 
 QUESTION_TEMPLATE = """
 <!doctype html>
 <html>
 <head>
-  <title>Career Guidance Chatbot</title>
+  <title>Career Guidance</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
-    form { background: white; padding: 20px; border-radius: 10px; max-width: 700px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    body { font-family: sans-serif; padding: 2em; background: #f4f4f4; }
+    form { background: white; padding: 2em; border-radius: 10px; max-width: 800px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h1 { text-align: center; }
-    input[type='submit'] { margin-top: 20px; background: #007BFF; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    .question { margin-bottom: 1em; }
+    input[type='submit'] { padding: 0.7em 2em; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
   </style>
 </head>
 <body>
   <form method="post">
     <h1>Career Guidance Chatbot</h1>
-    <p>Rate how much you agree with each of the following statements:</p>
-    {% for i, (question, category) in enumerate(questions) %}
-      <p><strong>Q{{ i+1 }}:</strong> {{ question }}<br>
-      <input type="number" name="q{{ i }}" min="1" max="5" required></p>
+    {% for i, (question, _) in enumerate(questions) %}
+      <div class="question">
+        <label><strong>Q{{ i+1 }}:</strong> {{ question }}</label><br>
+        <input type="number" name="q{{ i }}" min="1" max="5" required>
+      </div>
     {% endfor %}
-    <input type="submit" value="Get Career Suggestions">
+    <input type="submit" value="Get My Career Path">
   </form>
 </body>
 </html>
@@ -150,29 +150,26 @@ RESULT_TEMPLATE = """
 <!doctype html>
 <html>
 <head>
-  <title>Career Results</title>
+  <title>Your Career Path</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #eef2f7; padding: 20px; }
-    .result-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    body { font-family: sans-serif; padding: 2em; background: #eef2f7; }
+    .result-box { background: white; padding: 2em; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h2 { color: #333; }
-    ul { margin-left: 20px; }
+    ul { margin-top: 10px; }
     li { margin-bottom: 10px; }
+    a { display: block; margin-top: 30px; text-align: center; color: #007bff; text-decoration: none; }
   </style>
 </head>
 <body>
-  <h1>Your Career Path Suggestions</h1>
+  <h1>Your Career Path Results</h1>
   {% for title, careers in results %}
     <div class="result-box">
       <h2>{{ title }}</h2>
-      {% if careers %}
-        <ul>
-          {% for career, desc in careers %}
-            <li><strong>{{ career }}</strong>: {{ desc }}</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>No career data available yet for this type.</p>
-      {% endif %}
+      <ul>
+        {% for career, desc in careers %}
+          <li><strong>{{ career }}</strong>: {{ desc }}</li>
+        {% endfor %}
+      </ul>
     </div>
   {% endfor %}
   <a href="/">Take the test again</a>
@@ -180,218 +177,6 @@ RESULT_TEMPLATE = """
 </html>
 """
 
-# Commented out to avoid errors in restricted environments
+# Do not include app.run() when deploying to Render
 # if __name__ == '__main__':
 #     app.run(debug=False)
-        results = [(holland_types[code][0], holland_types[code][1]) for code in top_3]
-        return render_template_string(RESULT_TEMPLATE, results=results)
-
-    return render_template_string(QUESTION_TEMPLATE, questions=shuffled_questions)
-
-QUESTION_TEMPLATE = """
-<!doctype html>
-<html>
-<head>
-  <title>Career Guidance Chatbot</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; background: #f0f2f5; }
-    form { background: white; padding: 2em; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input[type=submit] { padding: 10px 20px; margin-top: 1em; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    h1 { color: #333; }
-  </style>
-</head>
-<body>
-<h1>Career Guidance Chatbot</h1>
-<p>Answer the following 50 questions (1 = Strongly Disagree, 5 = Strongly Agree)</p>
-<form method="post">
-  {% for i, (question, category) in enumerate(questions) %}
-    <p><b>Q{{ i+1 }}:</b> {{ question }}<br>
-    <input type="number" name="q{{ i }}" min="1" max="5" required></p>
-  {% endfor %}
-  <input type="submit" value="Submit">
-</form>
-</body>
-</html>
-"""
-
-RESULT_TEMPLATE = """
-<!doctype html>
-<html>
-<head>
-  <title>Results</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f7f9fc; padding: 2em; }
-    .card { background: white; border-radius: 10px; padding: 1.5em; margin-bottom: 2em; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2 { color: #444; }
-    ul { line-height: 1.8; }
-    a.button { display: inline-block; margin-top: 1em; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
-  </style>
-</head>
-<body>
-<h1>Your Career Path Suggestions</h1>
-{% for title, careers in results %}
-  <div class="card">
-    <h2>{{ title }}</h2>
-    <ul>
-    {% for career, desc in careers %}
-      <li><b>{{ career }}</b>: {{ desc }}</li>
-    {% endfor %}
-    </ul>
-  </div>
-{% endfor %}
-<a href="/">Take the test again</a>
-</body>
-</html>
-"""
-
-if __name__ == '__main__':
-    app.run(debug=True)
-<form method="post">
-    {% for i, (question, category) in enumerate(questions) %}
-        <p><b>Q{{ i+1 }}:</b> {{ question }}<br>
-        <input type="number" name="q{{ i }}" min="1" max="5" required></p>
-    {% endfor %}
-    <input type="submit" value="Submit">
-</form>
-</body>
-</html>
-"""
-
-RESULT_TEMPLATE = """
-<!doctype html>
-<html>
-<head>
-    <title>Results</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f7f9fc; padding: 2em; }
-        .card { background: white; border-radius: 10px; padding: 1.5em; margin-bottom: 2em; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2 { color: #444; }
-        ul { line-height: 1.8; }
-        a.button { display: inline-block; margin-top: 1em; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
-    </style>
-</head>
-<body>
-<h1>Your Career Path Suggestions</h1>
-{% for title, careers in results %}
-    <div class="card">
-        <h2>{{ title }}</h2>
-        <ul>
-        {% for career, desc in careers %}
-            <li><b>{{ career }}</b>: {{ desc }}</li>
-        {% endfor %}
-        </ul>
-    </div>
-{% endfor %}
-<form method="post" action="/download">
-    <input type="hidden" name="results_html" value="{{ request.form.get('results_html', '') | safe }}">
-    <a href="/" class="button">Take the test again</a>
-</form>
-</body>
-</html>
-"""
-
-if __name__ == '__main__':
-    app.run(debug=True)    if request.method == 'POST':
-        scores = {'R': 0, 'I': 0, 'A': 0, 'S': 0, 'E': 0, 'C': 0}
-        for i in range(50):
-            answer = request.form.get(f'q{i}')
-            if answer and answer.isdigit():
-                question, category = shuffled_questions[i]
-                scores[category] += int(answer)
-
-        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        top_3 = [code for code, score in sorted_scores[:3]]
-        results = [(holland_types[code][0], holland_types[code][1]) for code in top_3]
-
-        return render_template_string(RESULT_TEMPLATE, results=results)
-
-    return render_template_string(QUESTION_TEMPLATE, questions=shuffled_questions)
-
-QUESTION_TEMPLATE = """
-<!doctype html>
-<title>Career Guidance Chatbot</title>
-<h1>Career Guidance Chatbot</h1>
-<p>Answer the following 50 questions (1 = Strongly Disagree, 5 = Strongly Agree)</p>
-<form method="post">
-    {% for i, (question, category) in enumerate(questions) %}
-        <p><b>Q{{ i+1 }}:</b> {{ question }}<br>
-        <input type="number" name="q{{ i }}" min="1" max="5" required></p>
-    {% endfor %}
-    <input type="submit" value="Submit">
-</form>
-"""
-
-RESULT_TEMPLATE = """
-<!doctype html>
-<title>Results</title>
-<h1>Your Career Path Suggestions</h1>
-{% for title, careers in results %}
-    <h2>{{ title }}</h2>
-    <ul>
-    {% for career, desc in careers %}
-        <li><b>{{ career }}</b>: {{ desc }}</li>
-    {% endfor %}
-    </ul>
-{% endfor %}
-<a href="/">Take the test again</a>
-"""
-
-if __name__ == '__main__':
-    app.run(debug=True)
-                ("Pharmacist", "Dispenses medications and advises on their use."),
-                ("Lab Technician", "Performs technical laboratory tests and procedures.")
-            ]
-        ),
-        'A': (
-            "Artistic (Creators)",
-            [
-                ("Graphic Designer", "Creates visual content to communicate messages."),
-                ("Writer", "Produces written content for various media."),
-                ("Musician", "Composes or performs music."),
-                ("Actor", "Portrays characters in performances."),
-                ("Animator", "Creates animations and visual effects.")
-            ]
-        ),
-        'S': (
-            "Social (Helpers)",
-            [
-                ("Teacher", "Educates students in a variety of subjects."),
-                ("Counselor", "Provides guidance and support to individuals."),
-                ("Nurse", "Cares for patients and assists in treatment."),
-                ("Social Worker", "Supports individuals and families in need."),
-                ("Therapist", "Helps people cope with emotional challenges.")
-            ]
-        ),
-        'E': (
-            "Enterprising (Persuaders)",
-            [
-                ("Entrepreneur", "Starts and manages new business ventures."),
-                ("Manager", "Oversees teams and operations."),
-                ("Lawyer", "Advises and represents clients in legal matters."),
-                ("Salesperson", "Sells products or services to customers."),
-                ("Marketing Specialist", "Promotes products to target audiences.")
-            ]
-        ),
-        'C': (
-            "Conventional (Organizers)",
-            [
-                ("Accountant", "Manages financial records and reports."),
-                ("Administrator", "Handles office tasks and procedures."),
-                ("Data Entry Clerk", "Inputs and maintains digital records."),
-                ("Bank Clerk", "Provides banking services and transactions."),
-                ("Auditor", "Inspects financial records for accuracy.")
-            ]
-        )
-    }
-
-    print("Your top personality traits and career suggestions:\n")
-    for code in top_3:
-        title, careers = holland_types[code]
-        print(f"- {title}:")
-        for career, description in careers:
-            print(f"   * {career} - {description}")
-        print()
-
-if __name__ == "__main__":
-    scores = ask_questions()
-    suggest_careers(scores)
