@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 RIASEC = {k: 0 for k in "RIASCE"}
 
-# 50 questions with static options
+# 50 placeholder questions
 QUESTIONS = []
 for i in range(50):
     QUESTIONS.append({
@@ -48,8 +48,9 @@ button { padding:10px 20px; margin:5px; }
 </div>
 
 <script>
+// Parse questions from a JSON string safely
+const questions = JSON.parse('{{ questions | tojson | safe }}');
 let state = 0;
-const questions = {{ questions|safe }};
 let scores = {R:0,I:0,A:0,S:0,E:0,C:0};
 
 function ask(i){
@@ -104,7 +105,23 @@ ask(0);
 
 @app.route('/')
 def index():
-    return render_template_string(HTML, questions=json.dumps(QUESTIONS))
+    return render_template_string(HTML, questions=QUESTIONS)
+
+@app.route('/answer', methods=['POST'])
+def answer():
+    data = request.json
+    trait = data['trait']
+    state = data['state']
+    RIASEC[trait] += 1
+    if state + 1 >= len(QUESTIONS):
+        top_trait = max(RIASEC.items(), key=lambda x:x[1])[0]
+        profession, fact = CAREERS[top_trait]
+        chart_data = {"labels": list(RIASEC.keys()), "scores": list(RIASEC.values())}
+        return jsonify({"done": True, "profession": profession, "fact": fact, "chart_data": chart_data, "top_trait": top_trait})
+    return jsonify({"done": False})
+
+if __name__=="__main__":
+    app.run(debug=True)    return render_template_string(HTML, questions=json.dumps(QUESTIONS))
 
 @app.route('/answer', methods=['POST'])
 def answer():
