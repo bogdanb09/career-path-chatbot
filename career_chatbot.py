@@ -57,48 +57,48 @@ questions = [
 ]
 
 holland_types = {
-    'R': ("Realistic (Doers)", [
+    'R': [
         ("Engineer", "Designs and builds systems and structures. Engineers apply math and science to solve practical problems and improve technologies."),
         ("Mechanic", "Repairs and maintains machines and vehicles using tools and diagnostic equipment."),
         ("Electrician", "Installs and maintains electrical wiring and equipment safely and efficiently."),
         ("Carpenter", "Constructs and repairs building frameworks and structures from wood and other materials."),
         ("Pilot", "Operates aircraft to transport passengers or goods safely and on schedule.")
-    ]),
-    'I': ("Investigative (Thinkers)", [
+    ],
+    'I': [
         ("Scientist", "Conducts experiments and research to increase scientific knowledge in various fields."),
         ("Doctor", "Diagnoses and treats illnesses while promoting overall health and wellness."),
         ("Data Analyst", "Uses statistical tools to interpret and visualize data, helping businesses make decisions."),
         ("Pharmacist", "Prepares and dispenses medications, advising patients on proper usage and effects."),
         ("Lab Technician", "Performs technical laboratory tests to assist in the diagnosis and treatment of diseases.")
-    ]),
-    'A': ("Artistic (Creators)", [
+    ],
+    'A': [
         ("Graphic Designer", "Designs visual content for websites, ads, and branding using digital tools."),
         ("Writer", "Creates written content for books, websites, media, or scripts."),
         ("Musician", "Performs, composes, or records music for various audiences."),
         ("Actor", "Portrays characters in theater, film, or television productions."),
         ("Animator", "Creates animations and special effects for films, video games, or commercials.")
-    ]),
-    'S': ("Social (Helpers)", [
+    ],
+    'S': [
         ("Teacher", "Educates and mentors students in academic or practical subjects."),
         ("Counselor", "Provides advice and guidance to help people deal with personal or academic challenges."),
         ("Nurse", "Cares for patients by administering treatments and monitoring health."),
         ("Social Worker", "Supports individuals and families by connecting them to needed services and support."),
         ("Therapist", "Helps people manage emotional or psychological challenges through counseling.")
-    ]),
-    'E': ("Enterprising (Persuaders)", [
+    ],
+    'E': [
         ("Entrepreneur", "Builds and runs businesses, taking on financial and strategic risks."),
         ("Manager", "Supervises teams, resources, and operations in organizations or projects."),
         ("Lawyer", "Provides legal advice and represents clients in courts and negotiations."),
         ("Salesperson", "Sells products or services and builds client relationships."),
         ("Marketing Specialist", "Creates and implements strategies to promote and sell products or brands.")
-    ]),
-    'C': ("Conventional (Organizers)", [
+    ],
+    'C': [
         ("Accountant", "Manages financial records, budgets, and tax documents accurately."),
         ("Administrator", "Oversees day-to-day administrative operations in an office or department."),
         ("Data Entry Clerk", "Inputs data into computer systems efficiently and accurately."),
         ("Bank Clerk", "Handles customer transactions and maintains financial records in banks."),
         ("Auditor", "Examines financial statements to ensure accuracy and compliance with laws.")
-    ])
+    ]
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -109,14 +109,15 @@ def index():
         for i in range(50):
             answer = request.form.get(f'q{i}')
             if answer and answer.isdigit():
-                question, category = selected_questions[i]
+                _, category = selected_questions[i]
                 scores[category] += int(answer)
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        top_3 = [code for code, score in sorted_scores[:3]]
-        results = [(holland_types[code][0], holland_types[code][1]) for code in top_3]
+        ranked_careers = []
+        for code, _ in sorted_scores:
+            ranked_careers.extend(holland_types[code])
 
-        return render_template_string(RESULT_TEMPLATE, results=results)
+        return render_template_string(RESULT_TEMPLATE, results=ranked_careers[:15])
 
     return render_template_string(QUESTION_TEMPLATE, questions=selected_questions)
 
@@ -135,7 +136,7 @@ QUESTION_TEMPLATE = """
 <body>
   <form method="post">
     <h1>Career Guidance Chatbot</h1>
-    <p>Rate how much you agree with each of the following statements:</p>
+    <p>Rate how much you agree with each of the following statements (1 = Strongly Disagree, 5 = Strongly Agree):</p>
     {% for i in range(questions|length) %}
       <p><strong>Q{{ i+1 }}:</strong> {{ questions[i][0] }}<br>
       <input type="number" name="q{{ i }}" min="1" max="5" required></p>
@@ -160,17 +161,14 @@ RESULT_TEMPLATE = """
   </style>
 </head>
 <body>
-  <h1>Your Career Path Suggestions</h1>
-  {% for title, careers in results %}
-    <div class="result-box">
-      <h2>{{ title }}</h2>
-      <ul>
-        {% for career, desc in careers %}
-          <li><strong>{{ career }}</strong>: {{ desc }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-  {% endfor %}
+  <h1>Your Most Likely Career Matches</h1>
+  <div class="result-box">
+    <ul>
+      {% for career, desc in results %}
+        <li><strong>{{ career }}</strong>: {{ desc }}</li>
+      {% endfor %}
+    </ul>
+  </div>
   <a href="/">Take the test again</a>
 </body>
 </html>
