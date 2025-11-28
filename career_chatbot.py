@@ -1,110 +1,126 @@
-"""
-Career-Path Chatbot (RIASEC-style, 50 questions)
-Includes animated chart highlighting top 3 traits.
-"""
-
 from flask import Flask, request, jsonify, render_template_string, session
 import json
 
 app = Flask(__name__)
 app.secret_key = "change-this-secret"
 
-# ----------------------------------------------------
-# RIASEC scoring
-# ----------------------------------------------------
 RIASEC = {k: 0 for k in "RIASCE"}
 
-# ----------------------------------------------------
-# 50 original questions
-# ----------------------------------------------------
 QUESTIONS = [
-    ("q1", "Do you enjoy fixing or building things with your hands?", ["R"]),
-    ("q2", "Do you like investigating why things happen?", ["I"]),
-    ("q3", "Do you enjoy painting, drawing, or other creative activities?", ["A"]),
-    ("q4", "Do you find satisfaction in helping or teaching others?", ["S"]),
-    ("q5", "Do you like leading projects or persuading people?", ["E"]),
-    ("q6", "Do you enjoy making lists, organizing, or planning tasks?", ["C"]),
-    # For brevity, include questions q7-q48 as previously defined...
-    ("q49", "Do you enjoy experimenting or inventing new solutions?", ["I","R"]),
-    ("q50", "Do you enjoy combining creativity with helping others?", ["A","S"])
+    {"id": f"q{i+1}", "text": f"Question {i+1}: Choose the activity that appeals most to you:",
+     "options": [
+         {"text": "Hands-on or practical work", "trait": "R"},
+         {"text": "Analyzing or researching information", "trait": "I"},
+         {"text": "Creative or artistic expression", "trait": "A"},
+         {"text": "Helping or teaching others", "trait": "S"}
+     ]} for i in range(50)
 ]
 
-# ----------------------------------------------------
-# Keywords for scoring
-# ----------------------------------------------------
-KEYWORDS = {
-    "R": ["hands-on", "build", "repair", "tools", "physical", "practical", "outdoors"],
-    "I": ["analyze", "research", "logic", "math", "experiment", "think", "study", "question"],
-    "A": ["art", "draw", "creative", "design", "music", "imagine", "express", "perform"],
-    "S": ["help", "support", "teach", "care", "mentor", "community", "listen", "guide"],
-    "E": ["lead", "persuade", "motivate", "business", "sell", "organize people", "inspire"],
-    "C": ["plan", "organize", "detail", "record", "structure", "systems", "schedule", "rules"]
-}
-
-# ----------------------------------------------------
-# Careers mapping
-# ----------------------------------------------------
 CAREERS = {
-    "R": [
-        "Technician", "Mechanic", "Electrician", "Engineer (Hands-on)", "Carpenter",
-        "Plumber", "Construction Worker", "Pilot", "Chef", "Farmer", "Landscaper",
-        "Industrial Machine Operator", "Welder", "Automotive Technician", "Surveyor",
-        "Equipment Operator", "Firefighter", "Machinist", "Boat Captain", "HVAC Specialist"
-    ],
-    "I": [
-        "Data Scientist", "Researcher", "Software Developer", "Analyst", "Laboratory Scientist",
-        "Mathematician", "Statistician", "Chemist", "Physicist", "Biologist", "Psychologist",
-        "Medical Researcher", "Economist", "AI Specialist", "Forensic Scientist",
-        "Environmental Scientist", "Academic Researcher", "Engineer (Theory)", "IT Specialist",
-        "Cybersecurity Analyst", "Astronomer", "Philosopher", "Clinical Researcher", "Software Tester"
-    ],
-    "A": [
-        "Graphic Designer", "Musician", "Writer", "Animator", "Actor", "Photographer",
-        "Fashion Designer", "Interior Designer", "Video Editor", "Art Director", "Illustrator",
-        "Dancer", "Composer", "Advertising Creative", "Game Designer", "Sculptor",
-        "Painter", "Content Creator", "Creative Director", "Voice Actor", "Screenwriter",
-        "Set Designer", "Choreographer", "Makeup Artist", "Stage Designer"
-    ],
-    "S": [
-        "Teacher", "Counselor", "Nurse", "Social Worker", "Coach", "Therapist", "Speech Pathologist",
-        "Community Organizer", "Healthcare Worker", "Human Resources Specialist", "Mediator",
-        "Guidance Counselor", "Occupational Therapist", "Childcare Worker", "Elder Care Specialist",
-        "Volunteer Coordinator", "Rehabilitation Specialist", "Teacher Assistant", "Mentor", "Clergy",
-        "Public Health Worker", "Patient Advocate", "Education Coordinator", "School Administrator"
-    ],
-    "E": [
-        "Entrepreneur", "Sales Manager", "Project Leader", "Marketing Strategist", "Business Owner",
-        "Consultant", "Real Estate Agent", "Financial Advisor", "Public Relations Specialist",
-        "Event Planner", "Product Manager", "Startup Founder", "Investor", "Brand Manager",
-        "Lobbyist", "Team Leader", "Recruitment Manager", "Corporate Trainer", "Operations Manager",
-        "Fundraising Manager", "Advertising Executive", "Business Analyst", "Franchise Owner", "CEO"
-    ],
-    "C": [
-        "Accountant", "Administrator", "Operations Coordinator", "Data Entry Specialist", "Auditor",
-        "Office Manager", "Bookkeeper", "Project Coordinator", "Scheduler", "Paralegal",
-        "Insurance Underwriter", "Compliance Officer", "Records Manager", "Executive Assistant",
-        "Bank Teller", "Financial Analyst", "Administrative Assistant", "Inventory Manager",
-        "Logistics Coordinator", "Quality Control Specialist", "Database Administrator",
-        "Payroll Specialist", "Operations Analyst", "Human Resources Assistant"
-    ]
+    "R": ("Engineer", "Designs and builds machines, structures, or systems using science and math. Alternative careers: Mechanic, Carpenter, Electrician."),
+    "I": ("Data Scientist", "Analyzes complex data to help companies make decisions. Alternative careers: Researcher, Analyst, Software Developer."),
+    "A": ("Graphic Designer", "Creates visual content for print, digital media, and branding. Alternative careers: Illustrator, Animator, Photographer."),
+    "S": ("Teacher", "Educates students, guiding their learning and personal growth. Alternative careers: Counselor, Nurse, Social Worker."),
+    "E": ("Entrepreneur", "Starts and manages businesses, taking financial risks for profit. Alternative careers: Sales Manager, Project Leader, Marketing Strategist."),
+    "C": ("Accountant", "Manages financial records, ensures accuracy, and prepares reports. Alternative careers: Administrator, Auditor, Operations Coordinator.")
 }
 
-# ----------------------------------------------------
-# Score free-text answers
-# ----------------------------------------------------
-def score_answer(text, traits):
-    text = text.lower()
-    for t in traits:
-        for kw in KEYWORDS.get(t, []):
-            if kw in text:
-                RIASEC[t] += 1
-
-# ----------------------------------------------------
-# HTML template with Chart.js animation
-# ----------------------------------------------------
 HTML = """
 <!DOCTYPE html>
 <html>
+<head>
+<title>Career Pathfinder</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: Arial; max-width:700px; margin:auto; padding:20px; }
+button { padding:10px 20px; margin:5px; }
+#chart-container { margin-top:30px; width:100%; }
+</style>
+</head>
+<body>
+<h2>Career Pathfinder (RIASEC)</h2>
+<div id="chat"></div>
+<div id="chart-container">
+<canvas id="riaChart"></canvas>
+</div>
+
+<script>
+let state = 0;
+const questions = {{ questions|safe }};
+let scores = {R:0,I:0,A:0,S:0,E:0,C:0};
+
+function ask(i){
+    let q = questions[i];
+    let html = `<p><b>Q${i+1}:</b> ${q.text}</p>`;
+    q.options.forEach(opt=>{
+        html += `<button onclick="answer('${opt.trait}')">${opt.text}</button><br>`;
+    });
+    document.getElementById('chat').innerHTML = html;
+}
+
+async function answer(trait){
+    scores[trait] += 1;
+    let resp = await fetch('/answer',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({trait: trait})
+    });
+    let data = await resp.json();
+    if(data.done){
+        document.getElementById('chat').innerHTML = `<h3>Your Profession:</h3>
+        <b>${data.profession}</b>: ${data.fact}`;
+        drawChart(data.chart_data, data.top_trait);
+    }else{
+        state++;
+        ask(state);
+    }
+}
+
+function drawChart(chartData, topTrait){
+    const colors = chartData.labels.map(code => code===topTrait ? '#FF9800':'#2196F3');
+    const ctx = document.getElementById('riaChart').getContext('2d');
+    new Chart(ctx, {
+        type:'bar',
+        data:{
+            labels: chartData.labels,
+            datasets:[{
+                label:'RIASEC Scores',
+                data: chartData.scores,
+                backgroundColor: colors
+            }]
+        },
+        options:{responsive:true, scales:{y:{beginAtZero:true, precision:0}}}
+    });
+}
+
+ask(0);
+</script>
+</body>
+</html>
+"""
+
+@app.route('/')
+def index():
+    for k in RIASEC: RIASEC[k]=0
+    session['q_index']=0
+    js_questions = QUESTIONS
+    return render_template_string(HTML, questions=json.dumps(js_questions))
+
+@app.route('/answer', methods=['POST'])
+def answer():
+    data = request.json
+    trait = data['trait']
+    RIASEC[trait] += 1
+    session['q_index'] += 1
+    if session['q_index'] >= len(QUESTIONS):
+        top_trait = max(RIASEC.items(), key=lambda x:x[1])[0]
+        profession, fact = CAREERS[top_trait]
+        chart_data = {"labels": list(RIASEC.keys()), "scores": list(RIASEC.values())}
+        return jsonify({"done": True, "profession": profession, "fact": fact, "chart_data": chart_data, "top_trait": top_trait})
+    return jsonify({"done": False})
+
+if __name__=="__main__":
+    app.run(debug=True)<html>
 <head>
 <title>Career Pathfinder</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
